@@ -11,6 +11,8 @@ public class FactsPresenter : ABasePanelPresenter<FactsView>
     private FactsView _factView;
     private IWebLoadService _webLoadService;
     private List<WebCommand> _currentCommands = new();
+    private WebCommand _lastCommand;
+    private FactButtonView _lastBtnView;
 
     public FactsPresenter(FactsModel weatherModel, FactsView weatherView, IWebLoadService webLoadService)
     {
@@ -83,20 +85,12 @@ public class FactsPresenter : ABasePanelPresenter<FactsView>
             item.gameObject.SetActive(true);
             counter++;
         }
-
-        //foreach (Datum datum in facts)
-        //{
-        //    if(counter >= size) break;
-        //    factButtons.Add(new FactButtonModel(datum.Attributes.Name, datum.Id));
-        //    _weatherView.Bnts[counter].OnOpen.Subscribe(_ => OpenPopup(datum.Id, _weatherView.Bnts[counter]));
-        //    _weatherView.Bnts[counter].Name.text = datum.Attributes.Name;
-        //    _weatherView.Bnts[counter].gameObject.SetActive(true);  
-        //    counter++;
-        //}
     }
 
     private void OpenPopup(string id, FactButtonView factButtonView)
     {
+        _lastBtnView?.LoadProcess?.SetActive(false);
+        _lastCommand?.Cancell();
         factButtonView.LoadProcess.SetActive(true);
         CompositeDisposable tempDisposable = new CompositeDisposable();
 
@@ -114,6 +108,11 @@ public class FactsPresenter : ABasePanelPresenter<FactsView>
                     factButtonView.LoadProcess.SetActive(false);
 
                 }).AddTo(command.DisposeToken);
+            _factView.FactPopup.OnClose.Subscribe(_ =>
+            {
+                _factView.FactPopup.gameObject.SetActive(false);
+                tempDisposable?.Dispose();
+            }).AddTo(tempDisposable);
         }
         else
         {
@@ -121,11 +120,7 @@ public class FactsPresenter : ABasePanelPresenter<FactsView>
             factButtonView.LoadProcess.SetActive(false);
         }
 
-        _factView.FactPopup.OnClose.Subscribe(_ => 
-        {
-            _factView.FactPopup.gameObject.SetActive(false);
-            tempDisposable?.Dispose();
-        }).AddTo(tempDisposable);
+        
     }
 
     private void PopupCallback(ExecuteResult executeResult)

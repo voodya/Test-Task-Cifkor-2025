@@ -82,6 +82,7 @@ public class WeatherPresenter : ABasePanelPresenter<WeatherView>, IDisposable
         }
         WeatherData data = JsonConvert.DeserializeObject<WeatherData>(result.ResultData);
         _weatherModel.SetTemperature(data.Properties.Periods[0].Temperature);
+  
         result.Command.Cancell();
     }
 }

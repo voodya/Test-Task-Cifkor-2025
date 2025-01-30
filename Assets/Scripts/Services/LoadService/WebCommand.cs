@@ -51,7 +51,7 @@ public class WebCommand
             else
             {
                 if (responseResult.Result.Result.result == UnityWebRequest.Result.Success)
-                    _executeResult.OnNext(new ExecuteResult(responseResult.Result.Result.downloadHandler.text, this));
+                    _executeResult.OnNext(new ExecuteResult(responseResult.Result.Result.downloadHandler.text, responseResult.Result.Result.downloadHandler.data, this));
                 else
                     _executeResult.OnNext(new ExecuteResult(responseResult.Result.Result.error, false, this));
             }

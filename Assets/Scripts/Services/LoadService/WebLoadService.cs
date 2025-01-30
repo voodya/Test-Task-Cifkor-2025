@@ -112,17 +112,17 @@ public struct ExecuteResult
 {
     public string ResultDescription;
     public string ResultData;
+    public byte[] RawData;
     public bool Success;
-    public bool Validated;
     public WebCommand Command;
 
-    public ExecuteResult(string data, WebCommand command)
+    public ExecuteResult(string data, byte[] rawData, WebCommand command)
     {
         Success = true;
         ResultData = data;
         ResultDescription = "No problem";
-        Validated = true;
         Command = command;
+        RawData = rawData;
     }
 
     public ExecuteResult(string error, bool isCancelled, WebCommand command)
@@ -130,8 +130,8 @@ public struct ExecuteResult
         Success = false;
         ResultData = null;
         ResultDescription = error;
-        Validated = true;
         Command = command;
+        RawData = default;
     }
 }
 
