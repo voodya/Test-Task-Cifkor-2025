@@ -72,6 +72,7 @@ public class FactsPresenter : ABaseWebPanelPresenter<FactsView>
     {
         _lastBtnView?.LoadProcess?.SetActive(false);
         _lastCommand?.Cancell();
+        _lastCommand = null;
         _lastBtnView = factButtonView;
         _lastBtnView.LoadProcess.SetActive(true);
         SendRequest(_factsModel.ApiUrl + "/" + id, PopupCallback, OnSuccesStartLoad);

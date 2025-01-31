@@ -50,32 +50,14 @@ public class ABaseWebPanelPresenter<T> : IDisposable where T : ABasePanelView
     #endregion
 
     #region Web
-    protected void SendRequest(string url, Action<ExecuteResult> callback)
+
+    protected void SendRequest(string url, Action<ExecuteResult> callback, Action<WebCommand> successCallback = null)
     {
         var result = _webLoadService.SendCommand(url, out WebCommand command);
 
         if (result.SendSuccess)
         {
-            _currentCommands.Add(command);
-
-            command.OnRelease
-                .Subscribe(com => _currentCommands.Remove(com))
-                .AddTo(command.DisposeToken);
-
-            command.ExecuteResult
-                .Subscribe(ExecuteResult => ExecuteResult.Validate(callback))
-                .AddTo(command.DisposeToken);
-        }
-        else
-            Debug.LogError(result.Message);
-    }
-
-    protected void SendRequest(string url, Action<ExecuteResult> callback, Action<WebCommand> successCallback)
-    {
-        var result = _webLoadService.SendCommand(url, out WebCommand command);
-
-        if (result.SendSuccess)
-        {
+            successCallback?.Invoke(command);
             _currentCommands.Add(command);
 
             command.OnRelease

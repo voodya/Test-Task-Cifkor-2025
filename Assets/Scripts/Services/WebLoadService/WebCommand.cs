@@ -37,7 +37,19 @@ public class WebCommand
     {
         using UnityWebRequest request = UnityWebRequest.Get(_targetApiUrl);
         {
-            var responseResult = await request.SendWebRequest()
+            (bool IsTimeout, (bool IsCanceled, UnityWebRequest Result) Result) responseResult;
+#if UNITY_EDITOR
+            var res = await UniTask.Delay(2000, cancellationToken: _cancellationToken.Token).SuppressCancellationThrow();
+            responseResult.Result.IsCanceled = res;
+            if (responseResult.Result.IsCanceled)
+            {
+                _executeResult.OnNext(new ExecuteResult("Cancelled", true, this));
+                Cancell();
+                return;
+            }
+
+#endif
+            responseResult = await request.SendWebRequest()
                 .WithCancellation(_cancellationToken.Token)
                 .SuppressCancellationThrow()
                 .TimeoutWithoutException(TimeSpan.FromSeconds(5));
