@@ -44,7 +44,6 @@ public class WebCommand
             if (responseResult.Result.IsCanceled)
             {
                 _executeResult.OnNext(new ExecuteResult("Cancelled", true, this));
-                Cancell();
                 return;
             }
 

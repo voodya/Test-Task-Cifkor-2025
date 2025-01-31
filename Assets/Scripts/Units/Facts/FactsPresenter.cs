@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using UniRx;
 using UnityEngine;
@@ -9,7 +8,6 @@ public class FactsPresenter : ABaseWebPanelPresenter<FactsView>
 {
     private FactsModel _factsModel;
     private FactsView _factView;
-    private WebCommand _lastCommand;
     private FactButtonView _lastBtnView;
     private ISceneManager _sceneManager;
 
@@ -71,17 +69,15 @@ public class FactsPresenter : ABaseWebPanelPresenter<FactsView>
     private void OpenPopup(string id, FactButtonView factButtonView)
     {
         _lastBtnView?.LoadProcess?.SetActive(false);
-        _lastCommand?.Cancell();
-        _lastCommand = null;
+        for (int i = 0; i < _currentCommands.Count; i++)
+        {
+            _currentCommands[i]?.Cancell();
+        }
         _lastBtnView = factButtonView;
         _lastBtnView.LoadProcess.SetActive(true);
-        SendRequest(_factsModel.ApiUrl + "/" + id, PopupCallback, OnSuccesStartLoad);
+        SendRequest(_factsModel.ApiUrl + "/" + id, PopupCallback);
     }
 
-    private void OnSuccesStartLoad(WebCommand command)
-    {
-        _lastCommand = command;
-    }
 
     private async void PopupCallback(ExecuteResult executeResult)
     {
