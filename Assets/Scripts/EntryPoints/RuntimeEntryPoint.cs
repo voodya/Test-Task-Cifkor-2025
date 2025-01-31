@@ -1,4 +1,4 @@
-using System;
+using Cysharp.Threading.Tasks;
 using UniRx;
 
 public class RuntimeEntryPoint
@@ -8,8 +8,6 @@ public class RuntimeEntryPoint
 
     WeatherPresenter _weatherPresenter;
     FactsPresenter _factsPresenter;
-
-    
 
     public RuntimeEntryPoint(ISceneManager sceneManager, IWebLoadService webLoadService)
     {
@@ -22,7 +20,8 @@ public class RuntimeEntryPoint
         var loadScene = await _sceneManager.GetScene<LoadingView>();
         var runtimeScene = await _sceneManager.GetScene<RuntimeConnectionView>();
         CreatePresenters(runtimeScene);
-        runtimeScene.OnWeather.Subscribe(_ => 
+        await UniTask.Delay(500); //wait for animation completed
+        runtimeScene.OnWeather.Subscribe(_ =>
         {
             _weatherPresenter.Show();
             _factsPresenter.Hide();
@@ -43,6 +42,6 @@ public class RuntimeEntryPoint
     private void CreatePresenters(RuntimeConnectionView view)
     {
         _weatherPresenter = new WeatherPresenter(new WeatherModel("https://api.weather.gov/gridpoints/TOP/32,81/forecast"), view.WeatherView, _webLoadService);
-        _factsPresenter = new FactsPresenter(new FactsModel("https://dogapi.dog/api/v2/breeds", 10), view.FactsView, _webLoadService);
+        _factsPresenter = new FactsPresenter(new FactsModel("https://dogapi.dog/api/v2/breeds", 10), view.FactsView, _webLoadService, _sceneManager);
     }
 }

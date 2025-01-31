@@ -18,8 +18,14 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_SubObjectType: 
     m_EditorAssetChanged: 0
-  _testScene:
+  _runtimeScene:
     m_AssetGUID: b64cfd65d13593c45a468e87f5d302d4
+    m_SubObjectName: 
+    m_SubObjectGUID: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  _popupScene:
+    m_AssetGUID: f5c23fe1a0cbce048b713225a4547f76
     m_SubObjectName: 
     m_SubObjectGUID: 
     m_SubObjectType: 

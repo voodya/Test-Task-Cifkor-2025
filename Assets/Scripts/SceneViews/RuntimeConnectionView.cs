@@ -18,9 +18,4 @@ public class RuntimeConnectionView : ABaseScene
     public bool FactsInteractable { get => _factsButton.interactable; set { _factsButton.interactable = value; } }
     public WeatherView WeatherView => _weatherView;
     public FactsView FactsView => _factsView;
-
-    public override void Dispose()
-    {
-        throw new System.NotImplementedException();
-    }
 }

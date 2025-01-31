@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 
 public interface ISceneManager
 {
-    UniTask<T> GetScene<T>() where T : ABaseScene;
+    UniTask<T> GetScene<T>(bool autoShow = true) where T : ABaseScene;
     void RegisterScene<T>(AssetReference assetReference) where T : ABaseScene;
     UniTask ReleaseAllScenes();
     UniTask ReleaseScene<T>() where T : ABaseScene;
@@ -75,7 +75,7 @@ public class ScenesManagerService : ISceneManager
     }
 
 
-    public async UniTask<T> GetScene<T>()
+    public async UniTask<T> GetScene<T>(bool autoShow = true)
         where T : ABaseScene
     {
 
@@ -90,7 +90,8 @@ public class ScenesManagerService : ISceneManager
 
             T scene = (await loadingOperation).Scene.GetRoot<T>();
             _loadedScenes[screenType] = (scene, loadingOperation);
-            await scene.Show();
+            if(autoShow)
+                await scene.Show();
             return scene;
         }
     }
@@ -103,7 +104,6 @@ public class ScenesManagerService : ISceneManager
         if (_loadedScenes.ContainsKey(screenType))
         {
             await _loadedScenes[screenType].Item1.Hide();
-            _loadedScenes[screenType].Item1.Dispose();
             await Addressables.UnloadSceneAsync(_loadedScenes[screenType].Item2);
             _loadedScenes.Remove(screenType);
         }

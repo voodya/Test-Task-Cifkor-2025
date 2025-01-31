@@ -5,24 +5,28 @@ using System.Collections.Generic;
 using UniRx;
 using UnityEngine;
 
-public class FactsPresenter : ABasePanelPresenter<FactsView>
+public class FactsPresenter : ABaseWebPanelPresenter<FactsView>
 {
     private FactsModel _factsModel;
     private FactsView _factView;
-    private IWebLoadService _webLoadService;
-    private List<WebCommand> _currentCommands = new();
     private WebCommand _lastCommand;
     private FactButtonView _lastBtnView;
+    private ISceneManager _sceneManager;
 
-    public FactsPresenter(FactsModel weatherModel, FactsView weatherView, IWebLoadService webLoadService)
+    public FactsPresenter(
+        FactsModel weatherModel,
+        FactsView weatherView,
+        IWebLoadService webLoadService,
+        ISceneManager sceneManager) : base(webLoadService)
     {
         SetView(weatherView);
         Hide();
 
         _factsModel = weatherModel;
         _factView = weatherView;
+        _sceneManager = sceneManager;
 
-        _factsModel.Facts.Subscribe(UpdateFactsListView);
+        _factsModel.Facts.Subscribe(UpdateFactsListView).AddTo(_factView);
 
         _webLoadService = webLoadService;
     }
@@ -30,45 +34,21 @@ public class FactsPresenter : ABasePanelPresenter<FactsView>
     public override void Show()
     {
         base.Show();
-        UpdateData();
-    }
-
-    private void UpdateData()
-    {
         foreach (var item in _factView.Bnts)
         {
             item.gameObject.SetActive(false);
             item.LoadProcess.SetActive(false);
         }
-        var result = _webLoadService.SendCommand(_factsModel.ApiUrl, out WebCommand command);
-        if (result.SendSuccess)
-        {
-            _currentCommands.Add(command);
-            command.OnRelease
-                .Subscribe(com => _currentCommands.Remove(com))
-                .AddTo(command.DisposeToken);
-            command.ExecuteResult
-                .Subscribe(ExecuteResult => RequestCallback(ExecuteResult))
-                .AddTo(command.DisposeToken);
-        }
-        else
-            Debug.LogError(result.Message);
+        SendRequest(_factsModel.ApiUrl, RequestCallback);
     }
 
     private void RequestCallback(ExecuteResult executeResult)
     {
-        if (!executeResult.Success)
-        {
-            Debug.LogError(executeResult.ResultDescription);
-            executeResult.Command.Cancell();
-            return;
-        }
         FactsListData data = JsonConvert.DeserializeObject<FactsListData>(executeResult.ResultData);
         _factsModel.SetFacts(data.Data);
-        executeResult.Command.Cancell();
     }
 
-    private void UpdateFactsListView(List<Datum> facts)
+    private void UpdateFactsListView(List<FactPreviewData> facts)
     {
         if (facts == null) return;
         int size = _factView.Bnts.Count;
@@ -80,62 +60,37 @@ public class FactsPresenter : ABasePanelPresenter<FactsView>
             if (counter >= facts.Count) break;
             FactButtonModel model = new FactButtonModel(facts[counter].Attributes.Name, facts[counter].Id);
             factButtons.Add(model);
-            item.OnOpen.Subscribe(_ => OpenPopup(model.ID, item));
+            item.OnOpen.Subscribe(_ => OpenPopup(model.ID, item)).AddTo(_compositeDisposable);
             item.Name.text = facts[counter].Attributes.Name;
             item.gameObject.SetActive(true);
             counter++;
         }
+        _view.LoadIndicator.SetActive(false);
     }
 
     private void OpenPopup(string id, FactButtonView factButtonView)
     {
         _lastBtnView?.LoadProcess?.SetActive(false);
         _lastCommand?.Cancell();
-        factButtonView.LoadProcess.SetActive(true);
-        CompositeDisposable tempDisposable = new CompositeDisposable();
-
-        var result = _webLoadService.SendCommand(_factsModel.ApiUrl + "/" + id, out WebCommand command);
-        if (result.SendSuccess)
-        {
-            _currentCommands.Add(command);
-            command.OnRelease
-                .Subscribe(com => _currentCommands.Remove(com))
-                .AddTo(command.DisposeToken);
-            command.ExecuteResult
-                .Subscribe(ExecuteResult =>
-                {
-                    PopupCallback(ExecuteResult);
-                    factButtonView.LoadProcess.SetActive(false);
-
-                }).AddTo(command.DisposeToken);
-            _factView.FactPopup.OnClose.Subscribe(_ =>
-            {
-                _factView.FactPopup.gameObject.SetActive(false);
-                tempDisposable?.Dispose();
-            }).AddTo(tempDisposable);
-        }
-        else
-        {
-            Debug.LogError(result.Message);
-            factButtonView.LoadProcess.SetActive(false);
-        }
-
-        
+        _lastBtnView = factButtonView;
+        _lastBtnView.LoadProcess.SetActive(true);
+        SendRequest(_factsModel.ApiUrl + "/" + id, PopupCallback, OnSuccesStartLoad);
     }
 
-    private void PopupCallback(ExecuteResult executeResult)
+    private void OnSuccesStartLoad(WebCommand command)
     {
-        if (!executeResult.Success)
-        {
-            Debug.LogError(executeResult.ResultDescription);
-            executeResult.Command.Cancell();
-            return;
-        }
-        DogData data = JsonConvert.DeserializeObject<DogData>(executeResult.ResultData);
-        _factView.FactPopup.Description.text = data.Data.Attributes.Description;
-        _factView.FactPopup.Title.text = data.Data.Attributes.Name;
-        _factView.FactPopup.gameObject.SetActive(true);
-        executeResult.Command.Cancell();
+        _lastCommand = command;
+    }
+
+    private async void PopupCallback(ExecuteResult executeResult)
+    {
+        _lastBtnView.LoadProcess.SetActive(false);
+        OneFact data = JsonConvert.DeserializeObject<OneFact>(executeResult.ResultData);
+        var popup = await _sceneManager.GetScene<PopupView>(false);
+        popup.Description.text = data.Data.Attributes.Description;
+        popup.Title.text = data.Data.Attributes.Name;
+        await popup.Show();
+        popup.OnClose.Subscribe(_ => _sceneManager.ReleaseScene<PopupView>()).AddTo(popup);
     }
 }
 

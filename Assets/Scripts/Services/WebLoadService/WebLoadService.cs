@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UniRx;
@@ -62,7 +63,9 @@ public class WebLoadService : IWebLoadService
             command = _commandPool.Spawn();
             command.Prepare(ApiKey);
             command.OnRelease
-                .Subscribe(command => _commandPool.Despawn(command))
+                .Subscribe(command =>
+                _commandPool.Despawn(command)
+                )
                 .AddTo(command.DisposeToken);
             AddCommand(command);
             return new SendCommandResult()
@@ -116,6 +119,7 @@ public struct ExecuteResult
     public bool Success;
     public WebCommand Command;
 
+    
     public ExecuteResult(string data, byte[] rawData, WebCommand command)
     {
         Success = true;
