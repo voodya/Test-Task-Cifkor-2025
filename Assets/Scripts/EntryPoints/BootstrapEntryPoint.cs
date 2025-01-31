@@ -18,6 +18,7 @@ public class BootstrapEntryPoint
 
     private async void LoadStartScene()
     {
+        Application.targetFrameRate = 120;
         var scene = await _sceneManager.GetScene<LoadingView>();
 
         var result = await _webLoadService.CheckConnection();
